@@ -1,0 +1,86 @@
+<?php
+/**
+ * @file
+ * Block Proxies Main file.
+ *
+ * @license http://www.gnu.org/copyleft/gpl.html GNU General Public License
+ */
+
+/**
+ * Implements hook_menu().
+ */
+function block_proxies_menu() {
+  $items = array();
+  $items['admin/config/people/block-proxies'] = array(
+    'title' => 'Block Proxies',
+    'description' => t('Block Unwanted Connections.'),
+    'page callback' => 'block_proxies_page',
+    'access arguments' => array(
+      'ban IP address ranges',
+    ),
+    'file' => 'block_proxies.admin.inc',
+    'weight' => 10,
+  );
+
+  return $items;
+}
+
+/**
+ * Implements hook_boot().
+ */
+function block_proxies_boot() {
+  $config_values = block_proxies_get_values_list();
+  $current_ip = ip_address();
+
+  if (!empty($config_values)) {
+    $data = unserialize($config_values[0]->configuration);
+
+    if ($data['anonymouse'] == 1) {
+      if ($_SERVER['HTTP_USER_AGENT'] == 'http://Anonymouse.org/ (Unix)') {
+        block_proxies_deny_access($data['anonymouse_reason']);
+      }
+    }
+
+    if ($data['google_proxy'] == 1) {
+      if (preg_match('/google-proxy/', gethostbyaddr($current_ip))) {
+        block_proxies_deny_access($data['google_proxy_reason']);
+      }
+    }
+
+    if ($data['dnsbl'] != '') {
+      @include_once 'Net/DNSBL.php';
+      if (class_exists('Net_DNSBL')) {
+        $dnsbl = new Net_DNSBL();
+        $remote_ip = ip_address();
+        $blacklist = explode(',', $data['dnsbl']);
+        $dnsbl->setBlacklists($blacklist);
+
+        if (@$dnsbl->isListed($remote_ip)) {
+          block_proxies_deny_access($data['dnsbl_reason']);
+        }
+      }
+    }
+  }
+}
+
+/**
+ * Block And Deny Access function.
+ *
+ * @param string $message
+ *   An string containing:
+ *   - element: Message to show on denied connection.
+ */
+function block_proxies_deny_access($message) {
+  header($_SERVER['SERVER_PROTOCOL'] . ' 403 Forbidden');
+  print check_plain($message);
+  exit();
+}
+
+/**
+ * Get Values from database.
+ */
+function block_proxies_get_values_list() {
+  $data = db_select('block_proxies', 'bp')->fields('bp')->execute()->fetchAll();
+
+  return $data;
+}

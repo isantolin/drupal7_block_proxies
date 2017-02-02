@@ -1,0 +1,5 @@
+name = Block Proxies
+description = Block Unwanted Connections.
+
+; Information added by drupal.org packaging script on 2012-02-14
+core = "7.x"
