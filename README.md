@@ -6,3 +6,6 @@ Block Proxies
 - DNSBL
 - Anonymous Proxies
 - Pages as proxy
+
+# TODO
+- TOR Block
