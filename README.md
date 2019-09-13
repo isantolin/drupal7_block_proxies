@@ -8,4 +8,4 @@ Block Proxies
 - Pages as proxy
 
 # TODO
-- TOR Block
+- TOR Block: http://www.irongeek.com/i.php?page=security/detect-tor-exit-node-in-php
