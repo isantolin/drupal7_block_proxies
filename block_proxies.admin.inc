@@ -24,6 +24,8 @@ function block_proxies_form($form, $form_state) {
   
   // Initialize default values
   $net_dnsbl_noexists = FALSE;
+  $field_values_tor = '';
+  $field_values_tor_reason = '';
   $field_values_anonymouse = '';
   $field_values_anonymouse_reason = '';
   $field_values_google_proxy = '';
@@ -37,7 +39,7 @@ function block_proxies_form($form, $form_state) {
   @include_once 'Net/DNSBL.php';
 
   if (!class_exists('Net_DNSBL')) {
-    drupal_set_message(l(t('Net_DNSBL'), 'https://pear.php.net/package/Net_DNSBL/', array('external' => TRUE)) . t('Library not installed'), 'error');
+    drupal_set_message(l(t('Net_DNSBL'), 'https://pear.php.net/package/Net_DNSBL/', array('external' => TRUE)) . t(' Library not installed'), 'error');
     $net_dnsbl_noexists = TRUE;
   }
 
@@ -60,6 +62,22 @@ function block_proxies_form($form, $form_state) {
       $field_values_anonymouse_reason = 'Anonymouse use is blocked';
     }
 
+  if (isset($field_values)) {
+    if (isset($field_values['tor'])) {
+      $field_values_tor = $field_values['tor'];
+    }
+    else {
+      $field_values_tor = FALSE;
+    }
+
+  if (isset($field_values['tor_reason'])) {
+      $field_values_tor_reason = $field_values['tor_reason'];
+    }
+    else {
+      $field_values_tor_reason = 'Tor Network use is blocked';
+    }
+    
+    
     if (isset($field_values['google_proxy'])) {
       $field_values_google_proxy = $field_values['google_proxy'];
     }
@@ -102,7 +120,7 @@ function block_proxies_form($form, $form_state) {
     '#required' => FALSE,
     '#default_value' => $field_values_anonymouse,
   );
-
+  
   $form['anonymouse_reason'] = array(
     '#type' => 'textfield',
     '#required' => FALSE,
@@ -114,6 +132,24 @@ function block_proxies_form($form, $form_state) {
     ),
   );
 
+  $form['tor'] = array(
+      '#type' => 'checkbox',
+      '#title' => t('Tor Network'),
+      '#required' => FALSE,
+      '#default_value' => $field_values_tor,
+  );
+
+  $form['tor_reason'] = array(
+      '#type' => 'textfield',
+      '#required' => FALSE,
+      '#default_value' => $field_values_tor_reason,
+      '#states' => array(
+          'visible' => array(
+              ':input[id=edit-tor]' => array('checked' => TRUE),
+          ),
+      ),
+  );
+  
   $form['google_proxy'] = array(
     '#type' => 'checkbox',
     '#title' => t('Google as Proxy'),
@@ -169,6 +205,7 @@ function block_proxies_form($form, $form_state) {
   );
 
   return $form;
+  }
 }
 
 /**
