@@ -61,20 +61,9 @@ function block_proxies_boot() {
     }
     
      if ($data['tor'] != '') {
-     	if(!empty($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off'){
-        	$current_port = 443; // HTTP : 443
-        }else{
-            $current_port = 80; // HTTPS : 80
-        }
-     $ch = curl_init();
-     curl_setopt($ch, CURLOPT_URL, "https://check.torproject.org/cgi-bin/TorBulkExitList.py?ip=" . $current_ip . "&port=" . $current_port);
-     curl_setopt($ch, CURLOPT_RETURNTRANSFER, 1);
-     $output = curl_exec($ch);
-     
-     $pos = strpos($output, $current_ip);
-     if($pos === true){
-          block_proxies_deny_access($data['tor_reason']);
-      }
+         if (gethostbyname(ReverseIPOctets($_SERVER['REMOTE_ADDR']).".".$_SERVER['SERVER_PORT'].".".ReverseIPOctets($_SERVER['SERVER_ADDR']).".ip-port.exitlist.torproject.org")=="127.0.0.2") {
+             block_proxies_deny_access($data['tor_reason']);
+         }   
     }
   }
 }
@@ -99,4 +88,9 @@ function block_proxies_get_values_list() {
   $data = db_select('block_proxies', 'bp')->fields('bp')->execute()->fetchAll();
 
   return $data;
+}
+
+function ReverseIPOctets($inputip){
+    $ipoc = explode(".",$inputip);
+    return $ipoc[3].".".$ipoc[2].".".$ipoc[1].".".$ipoc[0];
 }
