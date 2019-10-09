@@ -14,7 +14,6 @@ function block_proxies_menu() {
   $items = array();
   $items['admin/config/people/block-proxies'] = array(
     'title' => 'Block Proxies',
-    'description' => t('Block Unwanted Connections.'),
     'page callback' => 'block_proxies_page',
     'access arguments' => array(
       'ban IP address ranges',
