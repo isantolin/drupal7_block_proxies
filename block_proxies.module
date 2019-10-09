@@ -1,4 +1,5 @@
 <?php
+
 /**
  * @file
  * Block Proxies Main file.
@@ -51,20 +52,54 @@ function block_proxies_boot() {
       @include_once 'Net/DNSBL.php';
       if (class_exists('Net_DNSBL')) {
         $dnsbl = new Net_DNSBL();
+        $remote_ip = ip_address();
         $blacklist = explode(',', $data['dnsbl']);
         $dnsbl->setBlacklists($blacklist);
 
-        if (@$dnsbl->isListed($current_ip)) {
+        if (@$dnsbl->isListed($remote_ip)) {
           block_proxies_deny_access($data['dnsbl_reason']);
         }
       }
     }
-    
-     if ($data['tor'] != '') {
-         if (gethostbyname(ReverseIPOctets($_SERVER['REMOTE_ADDR']).".".$_SERVER['SERVER_PORT'].".".ReverseIPOctets($_SERVER['SERVER_ADDR']).".ip-port.exitlist.torproject.org")=="127.0.0.2") {
-             block_proxies_deny_access($data['tor_reason']);
-         }   
-    }
+  }
+}
+
+/**
+ * Implements hook_help().
+ */
+function block_proxies_help($path, $arg) {
+  switch ($path) {
+    case 'admin/help#block_proxies':
+
+      $filepath = dirname(__FILE__) . '/README.md';
+      if (file_exists($filepath)) {
+        $readme = file_get_contents($filepath);
+      }
+      else {
+        $filepath = dirname(__FILE__) . '/README.txt';
+        if (file_exists($filepath)) {
+          $readme = file_get_contents($filepath);
+        }
+      }
+      if (!isset($readme)) {
+        return NULL;
+      }
+      if (module_exists('markdown')) {
+        $filters = module_invoke('markdown', 'filter_info');
+        $info = $filters['filter_markdown'];
+
+        if (function_exists($info['process callback'])) {
+          $output = $info['process callback']($readme, NULL);
+        }
+        else {
+          $output = '<pre>' . $readme . '</pre>';
+        }
+      }
+      else {
+        $output = '<pre>' . $readme . '</pre>';
+      }
+
+      return $output;
   }
 }
 
@@ -88,9 +123,4 @@ function block_proxies_get_values_list() {
   $data = db_select('block_proxies', 'bp')->fields('bp')->execute()->fetchAll();
 
   return $data;
-}
-
-function ReverseIPOctets($inputip){
-    $ipoc = explode(".",$inputip);
-    return $ipoc[3].".".$ipoc[2].".".$ipoc[1].".".$ipoc[0];
 }
