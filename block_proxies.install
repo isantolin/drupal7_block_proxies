@@ -4,39 +4,5 @@
  * @file
  * Block Proxies Installation File.
  *
- * @license http://www.gnu.org/copyleft/gpl.html GNU General Public License
+ * @license https://www.gnu.org/licenses/old-licenses/gpl-2.0.html GNU General Public License
  */
-
-/**
- * Implements hook_schema().
- */
-function block_proxies_schema() {
-  $schema['block_proxies'] = array(
-    'fields' => array(
-      'site' => array(
-        'type' => 'varchar',
-        'length' => 31,
-        'not null' => TRUE,
-        'default' => '',
-      ),
-      'configuration' => array(
-        'type' => 'text',
-        'size' => 'big',
-        'not null' => FALSE,
-      ),
-    ),
-    'primary key' => array('site'),
-    'indexes' => array(
-      'site' => array('site'),
-    ),
-  );
-
-  return $schema;
-}
-
-/**
- * Implements hook_uninstall().
- */
-function block_proxies_uninstall() {
-  drupal_uninstall_schema('block_proxies');
-}

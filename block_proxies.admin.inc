@@ -4,7 +4,7 @@
  * @file
  * Block Proxies Administration menu functions.
  *
- * @license http://www.gnu.org/copyleft/gpl.html GNU General Public License
+ * @license https://www.gnu.org/licenses/old-licenses/gpl-2.0.html GNU General Public License
  */
 
 /**
@@ -20,10 +20,12 @@ function block_proxies_page() {
  * Implements hook_form().
  */
 function block_proxies_form($form, $form_state) {
-  $result = db_select('block_proxies', 'bp')->fields('bp')->execute()->fetchAssoc();
+  $result = variable_get('block_proxies_settings');
 
   // Initialize default values.
   $net_dnsbl_noexists = FALSE;
+  $field_values_tor = '';
+  $field_values_tor_reason = '';
   $field_values_anonymouse = '';
   $field_values_anonymouse_reason = '';
   $field_values_google_proxy = '';
@@ -35,12 +37,12 @@ function block_proxies_form($form, $form_state) {
   @include_once 'Net/DNSBL.php';
 
   if (!class_exists('Net_DNSBL')) {
-    drupal_set_message(l(t('Net_DNSBL'), 'https://pear.php.net/package/Net_DNSBL/', array('external' => TRUE)) . t('Library not installed'), 'error');
+    drupal_set_message(l(t('Net_DNSBL'), 'https://pear.php.net/package/Net_DNSBL/', array('external' => TRUE)) . ' ' . t('Library not installed'), 'error');
     $net_dnsbl_noexists = TRUE;
   }
 
   if (isset($result)) {
-    $field_values = unserialize($result['configuration']);
+    $field_values = $result;
   }
 
   if (isset($field_values)) {
@@ -51,11 +53,25 @@ function block_proxies_form($form, $form_state) {
       $field_values_anonymouse = FALSE;
     }
 
-    if (isset($field_values['anonymouse_reason'])) {
+    if ($field_values['anonymouse_reason'] != '') {
       $field_values_anonymouse_reason = $field_values['anonymouse_reason'];
     }
     else {
       $field_values_anonymouse_reason = 'Anonymouse use is blocked';
+    }
+
+    if (isset($field_values['tor'])) {
+      $field_values_tor = $field_values['tor'];
+    }
+    else {
+      $field_values_tor = FALSE;
+    }
+
+    if (isset($field_values['tor_reason'])) {
+      $field_values_tor_reason = $field_values['tor_reason'];
+    }
+    else {
+      $field_values_tor_reason = 'Tor Network use is blocked';
     }
 
     if (isset($field_values['google_proxy'])) {
@@ -65,7 +81,7 @@ function block_proxies_form($form, $form_state) {
       $field_values_google_proxy = FALSE;
     }
 
-    if (isset($field_values['google_proxy_reason'])) {
+    if ($field_values['google_proxy_reason'] != '') {
       $field_values_google_proxy_reason = $field_values['google_proxy_reason'];
     }
     else {
@@ -86,7 +102,7 @@ function block_proxies_form($form, $form_state) {
       $field_values_dnsbl_list = FALSE;
     }
 
-    if (isset($field_values['dnsbl_reason'])) {
+    if ($field_values['dnsbl_reason'] != '') {
       $field_values_dnsbl_reason = $field_values['dnsbl_reason'];
     }
     else {
@@ -108,6 +124,24 @@ function block_proxies_form($form, $form_state) {
     '#states' => array(
       'visible' => array(
         ':input[id=edit-anonymouse]' => array('checked' => TRUE),
+      ),
+    ),
+  );
+
+  $form['tor'] = array(
+    '#type' => 'checkbox',
+    '#title' => t('Tor Network'),
+    '#required' => FALSE,
+    '#default_value' => $field_values_tor,
+  );
+
+  $form['tor_reason'] = array(
+    '#type' => 'textfield',
+    '#required' => FALSE,
+    '#default_value' => $field_values_tor_reason,
+    '#states' => array(
+      'visible' => array(
+        ':input[id=edit-tor]' => array('checked' => TRUE),
       ),
     ),
   );
@@ -170,22 +204,15 @@ function block_proxies_form($form, $form_state) {
 }
 
 /**
- * Implements hook_from_submit().
+ * Form submission handler for block_proxies_form().
+ *
  */
 function block_proxies_form_submit($form, &$form_state) {
   $form_state['values']['dnsbl'] = str_replace(' ', '', $form_state['values']['dnsbl']);
 
-  $data = serialize($form_state['values']);
+  $data = $form_state['values'];
 
-  $result = db_select('block_proxies', 'bp')->fields('bp')->execute();
-  $num_of_results = $result->rowCount();
-
-  if ($num_of_results == 0) {
-    db_insert('block_proxies')->fields(array('site' => 'all', 'configuration' => $data))->execute();
-  }
-  else {
-    db_update('block_proxies')->fields(array('configuration' => $data))->condition('site', 'all')->execute();
-  }
+  variable_set('block_proxies_settings', $data);
 
   drupal_set_message(t('Configuration Updated'));
   $form_state['redirect'] = 'admin/config/people/block-proxies';

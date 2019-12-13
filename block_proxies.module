@@ -4,8 +4,20 @@
  * @file
  * Block Proxies Main file.
  *
- * @license http://www.gnu.org/copyleft/gpl.html GNU General Public License
+ * @license https://www.gnu.org/licenses/old-licenses/gpl-2.0.html GNU General Public License
  */
+
+/**
+ * Implements hook_permission().
+ */
+function block_proxies_permission() {
+  return array(
+    'administer your module' => array(
+      'title' => t('Administer permissions for your Block Proxies'),
+      'description' => t('Block Proxies permissions must be configured by Experienced System Administrators'),
+    ),
+  );
+}
 
 /**
  * Implements hook_menu().
@@ -18,6 +30,7 @@ function block_proxies_menu() {
     'access arguments' => array(
       'ban IP address ranges',
     ),
+    'access arguments' => array('administer your module'),
     'file' => 'block_proxies.admin.inc',
     'weight' => 10,
   );
@@ -29,11 +42,11 @@ function block_proxies_menu() {
  * Implements hook_boot().
  */
 function block_proxies_boot() {
-  $config_values = block_proxies_get_values_list();
+  $result = variable_get('block_proxies_settings');
   $current_ip = ip_address();
 
-  if (!empty($config_values)) {
-    $data = unserialize($config_values[0]->configuration);
+  if (!empty($result)) {
+    $data = $result;
 
     if ($data['anonymouse'] == 1) {
       if ($_SERVER['HTTP_USER_AGENT'] == 'http://Anonymouse.org/ (Unix)') {
@@ -58,6 +71,12 @@ function block_proxies_boot() {
         if (@$dnsbl->isListed($remote_ip)) {
           block_proxies_deny_access($data['dnsbl_reason']);
         }
+      }
+    }
+
+    if ($data['tor'] != '') {
+      if (gethostbyname(block_proxies_reverse_ip_octets(ip_address()) . "." . $_SERVER['SERVER_PORT'] . "." . block_proxies_reverse_ip_octets($_SERVER['SERVER_ADDR']) . ".ip-port.exitlist.torproject.org") == "127.0.0.2") {
+        block_proxies_deny_access($data['tor_reason']);
       }
     }
   }
@@ -116,10 +135,16 @@ function block_proxies_deny_access($message) {
 }
 
 /**
- * Get Values from database.
+ * Tor IP Resolution.
+ *
+ * @param string $inputip
+ *   An string containing:
+ *   - element: Remote Host IP Address.
  */
-function block_proxies_get_values_list() {
-  $data = db_select('block_proxies', 'bp')->fields('bp')->execute()->fetchAll();
-
-  return $data;
+function block_proxies_reverse_ip_octets($inputip) {
+  if($inputip == '::1') {
+  	$inputip = '127.0.0.1';
+  }
+  $ipoc = explode(".", $inputip);
+  return $ipoc[3] . "." . $ipoc[2] . "." . $ipoc[1] . "." . $ipoc[0];
 }

@@ -25,7 +25,6 @@ REQUIREMENTS
 This module requires the following modules:
 
  * Net_DNSBL (https://pear.php.net/package/Net_DNSBL/)
- * Drupal 7 (https://www.drupal.org/)
 
 
 INSTALLATION
@@ -34,9 +33,6 @@ INSTALLATION
  * Install as you would normally install a contributed Drupal module. Visit
    https://www.drupal.org/documentation/install/modules-themes/modules-7
    for further information.
-
- * You may want to disable Toolbar module, since its output clashes with
-   Administration Menu.
 
 
 CONFIGURATION
